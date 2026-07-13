@@ -19,6 +19,7 @@ dist-ssr/
 
 # Claude Code
 .claude/settings.local.json
+docs/.bkit-memory.json
 
 # Editor
 .vscode/*
