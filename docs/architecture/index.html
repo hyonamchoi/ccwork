@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Notes App — Architecture</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      min-height: 100vh;
+      padding: 48px 24px;
+    }
+
+    .page-header {
+      text-align: center;
+      margin-bottom: 64px;
+    }
+    .page-header h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      color: #f8fafc;
+    }
+    .page-header p {
+      margin-top: 8px;
+      font-size: 0.9rem;
+      color: #64748b;
+    }
+    .badge {
+      display: inline-block;
+      margin-top: 16px;
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      background: #1e293b;
+      color: #94a3b8;
+      border: 1px solid #334155;
+    }
+    .badge + .badge { margin-left: 6px; }
+
+    .section {
+      max-width: 1000px;
+      margin: 0 auto 64px;
+    }
+    .section-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #475569;
+      margin-bottom: 12px;
+    }
+    .section h2 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #f1f5f9;
+      margin-bottom: 8px;
+    }
+    .section p {
+      font-size: 0.875rem;
+      color: #64748b;
+      line-height: 1.6;
+      margin-bottom: 24px;
+    }
+
+    .diagram-card {
+      background: #1a1f2e;
+      border: 1px solid #1e293b;
+      border-radius: 16px;
+      padding: 40px 32px;
+      overflow-x: auto;
+    }
+    .diagram-card .mermaid {
+      display: flex;
+      justify-content: center;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-top: 20px;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.78rem;
+      color: #64748b;
+    }
+    .legend-line {
+      width: 28px;
+      height: 2px;
+      background: #475569;
+    }
+    .legend-line.dashed {
+      background: repeating-linear-gradient(
+        to right, #475569 0, #475569 4px, transparent 4px, transparent 8px
+      );
+    }
+    .legend-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+    }
+
+    .file-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 12px;
+      margin-top: 8px;
+    }
+    .file-card {
+      background: #1a1f2e;
+      border: 1px solid #1e293b;
+      border-radius: 10px;
+      padding: 14px 16px;
+    }
+    .file-card .path {
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 0.78rem;
+      color: #7dd3fc;
+      margin-bottom: 4px;
+    }
+    .file-card .desc {
+      font-size: 0.8rem;
+      color: #64748b;
+      line-height: 1.5;
+    }
+    .file-card .tag {
+      display: inline-block;
+      margin-top: 8px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.68rem;
+      font-weight: 600;
+    }
+    .tag-state { background: #1e3a5f; color: #7dd3fc; }
+    .tag-ui    { background: #1a2e1a; color: #86efac; }
+    .tag-api   { background: #2d1f3d; color: #c4b5fd; }
+    .tag-type  { background: #3d2a1a; color: #fdba74; }
+
+    .divider {
+      max-width: 1000px;
+      margin: 0 auto 64px;
+      height: 1px;
+      background: #1e293b;
+    }
+
+    footer {
+      text-align: center;
+      font-size: 0.75rem;
+      color: #334155;
+      padding-top: 16px;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="page-header">
+    <h1>📝 Notes App Architecture</h1>
+    <p>컴포넌트 의존성 · 상태 흐름 시각화</p>
+    <div style="margin-top:16px">
+      <span class="badge">React 19</span>
+      <span class="badge">TypeScript 5.7</span>
+      <span class="badge">Vite 6</span>
+      <span class="badge">JSON Server</span>
+    </div>
+  </header>
+
+  <!-- ① 컴포넌트 의존성 -->
+  <section class="section">
+    <p class="section-label">Diagram 1</p>
+    <h2>컴포넌트 의존성</h2>
+    <p>
+      실선은 렌더(부모→자식) 관계, 점선은 <code>useNotes()</code> 훅을 통한 Context 구독,
+      굵은 화살표는 REST API 호출을 나타냅니다.
+    </p>
+    <div class="diagram-card">
+      <div class="mermaid">
+graph TD
+  main["⚡ main.tsx"]
+
+  subgraph AppLayer ["App Layer"]
+    App["App.tsx\n──────────────\nselectedNoteId\nisCreating"]
+  end
+
+  subgraph StateLayer ["State Layer"]
+    NotesProvider["NotesProvider\n──────────────\nnotes[] · loading · error\naddNote · editNote · removeNote"]
+    API["api/notes.ts\n──────────────\nfetchNotes · createNote\nupdateNote · deleteNote"]
+  end
+
+  subgraph UILayer ["UI Layer"]
+    Layout["Layout.tsx\n──────\n2단 레이아웃"]
+    NoteList["NoteList.tsx\n──────\n목록 + 상태 표시"]
+    NoteItem["NoteItem.tsx\n──────\n단일 노트 행"]
+    NoteEditor["NoteEditor.tsx\n──────\n생성 / 편집 폼"]
+  end
+
+  DB[("🗄️ db.json\nJSON Server :3001")]
+  NoteType["📄 types/note.ts\nNote interface"]
+
+  main --> App
+  App --> NotesProvider
+  App -->|"sidebar / main props"| Layout
+  Layout --> NoteList
+  Layout --> NoteEditor
+
+  NoteList --> NoteItem
+  NoteList -. "useNotes()" .-> NotesProvider
+  NoteEditor -. "useNotes()" .-> NotesProvider
+
+  NotesProvider --> API
+  API ==>|"fetch REST"| DB
+  API --- NoteType
+  NoteItem --- NoteType
+
+style StateLayer fill:#1e2d4a,stroke:#2d4a7a
+style UILayer fill:#1a2d1a,stroke:#2d4a2d
+style AppLayer fill:#2d1f3d,stroke:#4a2d6a
+style DB fill:#1a1a1a,stroke:#475569,color:#94a3b8
+style NoteType fill:#2d1f0a,stroke:#6b4a1a,color:#fdba74
+      </div>
+    </div>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-line"></div> 렌더 관계 (부모 → 자식)</div>
+      <div class="legend-item"><div class="legend-line dashed"></div> useNotes() 훅 구독</div>
+      <div class="legend-item"><div class="legend-line" style="height:3px;background:#94a3b8"></div> 타입 참조 (import)</div>
+      <div class="legend-item"><div class="legend-line" style="height:3px;background:#7dd3fc"></div> REST API 호출</div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- ② 상태 흐름 -->
+  <section class="section">
+    <p class="section-label">Diagram 2</p>
+    <h2>상태 흐름</h2>
+    <p>
+      상태는 세 레이어로 분리됩니다. UI 선택 상태(App), 서버 동기 상태(Context),
+      폼 로컬 상태(NoteEditor). 각 상태가 어느 컴포넌트에 영향을 주는지 나타냅니다.
+    </p>
+    <div class="diagram-card">
+      <div class="mermaid">
+flowchart LR
+  subgraph AS ["🎛️ App.tsx — UI State"]
+    SNI["selectedNoteId\nstring | null"]
+    IC["isCreating\nboolean"]
+  end
+
+  subgraph CS ["🗃️ NotesContext — Server State"]
+    N["notes: Note[]"]
+    L["loading: boolean"]
+    E["error: string | null"]
+  end
+
+  subgraph FS ["✏️ NoteEditor — Form State"]
+    T["title: string"]
+    C["content: string"]
+    S["saving: boolean"]
+  end
+
+  NL["NoteList.tsx"]
+  NE["NoteEditor.tsx"]
+  NI["NoteItem.tsx"]
+  API2["api/notes.ts"]
+  DB2[("db.json")]
+
+  SNI -->|"선택 항목 하이라이트"| NL
+  SNI -->|"폼 초기값 결정"| NE
+  IC -->|"새 폼 / 편집 폼 전환"| NE
+
+  N -->|"목록 렌더"| NL
+  N -->|"선택 노트 조회"| NE
+  L -->|"로딩 표시"| NL
+  E -->|"에러 표시"| NL
+
+  NL -->|"onDelete(id)"| CS
+  NE -->|"addNote / editNote"| CS
+  CS -->|"CRUD 호출"| API2
+  API2 <-->|"HTTP REST"| DB2
+
+  NL --> NI
+
+style AS fill:#2d1f3d,stroke:#4a2d6a
+style CS fill:#1e2d4a,stroke:#2d4a7a
+style FS fill:#1a2d1a,stroke:#2d4a2d
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- ③ 파일 역할 -->
+  <section class="section">
+    <p class="section-label">Reference</p>
+    <h2>파일별 역할</h2>
+    <p>각 파일의 책임과 레이어 분류입니다.</p>
+    <div class="file-grid">
+      <div class="file-card">
+        <div class="path">src/App.tsx</div>
+        <div class="desc">UI 선택 상태(selectedNoteId, isCreating) 관리. NotesProvider로 전체 트리를 감싸고 Layout에 슬롯 전달.</div>
+        <span class="tag tag-ui">UI · Entry</span>
+      </div>
+      <div class="file-card">
+        <div class="path">src/context/NotesContext.tsx</div>
+        <div class="desc">서버 동기 상태(notes, loading, error) 관리. CRUD 메서드 제공. 낙관적 업데이트 패턴 적용.</div>
+        <span class="tag tag-state">State · Context</span>
+      </div>
+      <div class="file-card">
+        <div class="path">src/api/notes.ts</div>
+        <div class="desc">JSON Server(:3001) fetch 래퍼. 모든 HTTP 통신의 단일 진입점. 타임스탬프 클라이언트 주입.</div>
+        <span class="tag tag-api">API · Boundary</span>
+      </div>
+      <div class="file-card">
+        <div class="path">src/components/Layout.tsx</div>
+        <div class="desc">헤더 + 사이드바 + 메인 2단 레이아웃. 순수 구조 컴포넌트, 데이터 없음.</div>
+        <span class="tag tag-ui">UI · Layout</span>
+      </div>
+      <div class="file-card">
+        <div class="path">src/components/NoteList.tsx</div>
+        <div class="desc">useNotes()로 목록 구독. loading / error / empty 세 가지 early return 처리.</div>
+        <span class="tag tag-ui">UI · Consumer</span>
+      </div>
+      <div class="file-card">
+        <div class="path">src/components/NoteItem.tsx</div>
+        <div class="desc">단일 노트 표시. 상태 없는 순수 표시 컴포넌트. 클릭·삭제 이벤트를 props로 위임.</div>
+        <span class="tag tag-ui">UI · Pure</span>
+      </div>
+      <div class="file-card">
+        <div class="path">src/components/NoteEditor.tsx</div>
+        <div class="desc">생성·편집 폼. 로컬 폼 상태(title, content, saving) 보유. addNote / editNote 호출.</div>
+        <span class="tag tag-ui">UI · Consumer</span>
+      </div>
+      <div class="file-card">
+        <div class="path">src/types/note.ts</div>
+        <div class="desc">Note 인터페이스 단일 정의. id·title·content·createdAt·updatedAt. tags는 미구현.</div>
+        <span class="tag tag-type">Type · Shared</span>
+      </div>
+    </div>
+  </section>
+
+  <footer>Notes App · Architecture Diagram · Generated by Claude Code</footer>
+
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'dark',
+      themeVariables: {
+        primaryColor: '#1e293b',
+        primaryTextColor: '#e2e8f0',
+        primaryBorderColor: '#334155',
+        lineColor: '#64748b',
+        secondaryColor: '#0f172a',
+        tertiaryColor: '#1e293b',
+        edgeLabelBackground: '#1a1f2e',
+        clusterBkg: '#1a1f2e',
+        titleColor: '#f1f5f9',
+        nodeBorder: '#334155',
+      },
+      flowchart: { curve: 'basis', padding: 20 },
+    });
+  </script>
+</body>
+</html>
