@@ -28,7 +28,7 @@ export function NoteEditor({ selectedNoteId, isCreating, onDone }: NoteEditorPro
 
   const handleSave = async () => {
     if (!title.trim()) {
-      alert('제목을 입력해주세요');
+      console.error('제목을 입력해주세요');
       return;
     }
 
@@ -42,7 +42,6 @@ export function NoteEditor({ selectedNoteId, isCreating, onDone }: NoteEditorPro
       onDone();
     } catch (e) {
       console.error(e);
-      alert('저장에 실패했습니다');
     } finally {
       setSaving(false);
     }
