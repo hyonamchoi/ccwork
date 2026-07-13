@@ -42,6 +42,45 @@ src/
 - `App.tsx`는 선택 UI 상태만 관리하고, 데이터 조작은 모두 Context에 위임
 - `db.json`이 JSON Server의 영구 저장소 역할 (git 추적됨)
 
+```mermaid
+graph TD
+  main["main.tsx"]
+
+  subgraph app ["App Layer"]
+    App["App.tsx\nselectedNoteId / isCreating"]
+  end
+
+  subgraph context ["State Layer (NotesContext)"]
+    NotesProvider["NotesProvider\nnotes[] / loading / error"]
+    api["api/notes.ts\nfetch CRUD"]
+  end
+
+  subgraph components ["Component Layer"]
+    Layout["Layout.tsx\n사이드바 + 메인 레이아웃"]
+    NoteList["NoteList.tsx"]
+    NoteItem["NoteItem.tsx"]
+    NoteEditor["NoteEditor.tsx"]
+  end
+
+  DB[("db.json\nJSON Server :3001")]
+  Note["types/note.ts\nNote interface"]
+
+  main --> App
+  App --> NotesProvider
+  App --> Layout
+  Layout --> NoteList
+  Layout --> NoteEditor
+  NoteList --> NoteItem
+
+  NoteList -. "useNotes()" .-> NotesProvider
+  NoteEditor -. "useNotes()" .-> NotesProvider
+
+  NotesProvider --> api
+  api -- "REST" --> DB
+  api --> Note
+  NoteItem --> Note
+```
+
 ## 기술 스택
 
 | 도구 | 버전 | 비고 |
